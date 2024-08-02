@@ -1,0 +1,30 @@
+---
+- name: Join Kubernetes cluster
+  hosts: control
+  become: yes
+  tasks:
+    - name: Get token and cert hash from the master
+      shell: |
+        MASTER_IP=$(kubectl cluster-info | grep 'Kubernetes control plane' | awk '{print $NF}' | sed -E 's/https?:\/\/([^:]+):.*/\1/')
+        MASTER_IP=$(echo $MASTER_IP | sed 's/\x1b\[[0-9;]*m//g')
+        TOKEN=$(kubeadm token list | grep 'token' | awk '{print $1}')
+        CA_CERT_HASH=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der | sha256sum | awk '{print "sha256:" $1}')
+        echo $MASTER_IP
+        echo $TOKEN
+        echo $CA_CERT_HASH
+      register: k8s_info
+
+    - name: Join the Kubernetes cluster
+      set_fact:
+        master_ip: "{{ k8s_info.stdout_lines[0] }}"
+        token: "{{ k8s_info.stdout_lines[1] }}"
+        ca_cert_hash: "{{ k8s_info.stdout_lines[2] }}"
+
+    - name: Join the Kubernetes cluster
+      command: kubeadm join {{ master_ip }}:6443 --token {{ token }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}
+
+    - name: Ensure kubelet is started
+      service:
+        name: kubelet
+        state: started
+        enabled: yes

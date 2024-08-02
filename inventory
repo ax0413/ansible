@@ -1,0 +1,9 @@
+[control]
+192.168.56.11
+[worker]
+192.168.56.21
+192.168.56.22
+192.168.56.23
+[nodes:children]
+control
+worker

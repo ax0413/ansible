@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: machbase
+  labels:
+    app: machbase
+spec:
+  ports:
+  - name: sshd
+    protocol: TCP
+    port: 5652
+    targetPort: 5652
+  - name: mqtt
+    protocol: TCP
+    port: 5653
+    targetPort: 5653
+  - name: http
+    protocol: TCP
+    port: 5654
+    targetPort: 5654
+  - name: grpc
+    protocol: TCP
+    port: 5655
+    targetPort: 5655
+  - name: dbengine
+    protocol: TCP
+    port: 5656
+    targetPort: 5656
+  selector:
+    app: machbase
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: machbase-pv-claim
+  labels:
+    app: machbase
+spec:
+  storageClassName: rook-ceph-block
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: machbase
+  labels:
+    app: machbase
+    tier: machbase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: machbase
+  template:
+    metadata:
+      labels:
+        app: machbase
+    spec:
+      containers:
+        - image: machbase/machbase-neo:v8.0.20
+          name: machbase
+          ports:
+            - name: sshd
+              containerPort: 5652
+            - name: mqtt
+              containerPort: 5653
+            - name: http
+              containerPort: 5654
+            - name: grpc
+              containerPort: 5655
+            - name: dbengine
+              containerPort: 5656
+          volumeMounts:
+            - name: machbase-persistent-storage
+              mountPath: /data
+      volumes:
+        - name: machbase-persistent-storage
+          persistentVolumeClaim:
+            claimName: machbase-pv-claim

@@ -1,0 +1,44 @@
+---
+- name: Set up Kubernetes master node
+  hosts: control
+  become: no
+  vars:
+    master_ip: "{{ ansible_host }}"
+    pod_network_cidr: "10.244.0.0/16"
+    homedir: "{{ ansible_env.HOME }}"
+    userid: "{{ ansible_user_id }}"
+    groupid: "{{ ansible_user_gid }}"
+
+  tasks:
+    - name: Initialize Kubernetes master
+      command: >
+        kubeadm init
+        --apiserver-advertise-address={{ master_ip }}
+        --pod-network-cidr={{ pod_network_cidr }}
+      become: yes
+      ignore_errors: yes
+
+    - name: Ensure directory exists
+      file:
+        path: "{{ homedir }}/.kube"
+        state: directory
+        mode: '0755'
+
+    - name: Copy admin.conf file
+      become: yes
+      fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: "{{ homedir }}/.kube/config"
+        flat: yes
+
+    - name: Ensure the kubeconfig file has the correct owner
+      become: yes
+      file:
+        path: "{{ homedir }}/.kube/config"
+        owner: "{{ userid }}"
+        group: "{{ groupid }}"
+        state: file
+        mode: '0644'
+
+    - name: Apply Calico CNI
+      shell: curl -sSL https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml | kubectl apply -f -

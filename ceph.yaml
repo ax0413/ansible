@@ -1,0 +1,28 @@
+---
+- name: Deploy Rook on Kubernetes
+  hosts: control
+  become: yes
+  tasks:
+    - name: git clone rook
+      command: git clone --single-branch --branch v1.14.8 https://github.com/rook/rook.git
+      args:
+        chdir: ansible
+    - name: Create CRDs, common, and operator
+      command: kubectl apply -f crds.yaml -f common.yaml -f operator.yaml
+      args:
+        chdir: ansible/rook/deploy/examples
+
+    - name: Create Rook cluster
+      command: kubectl apply -f cluster.yaml
+      args:
+        chdir: ansible/rook/deploy/examples
+
+    - name: Apply Rook CSI RBD StorageClass
+      command: kubectl apply -f storageclass.yaml
+      args:
+        chdir: ansible/rook/deploy/examples/csi/rbd
+
+    - name: Apply dashboard-loadbalancer.yaml
+      command: kubectl apply -f dashboard-loadbalancer.yaml
+      args:
+        chdir: ansible/rook/deploy/examples
