@@ -7,8 +7,13 @@ pwd가 ~/ansible이 맞는지 확인하세요
 ansible-playbook [FILE.yaml]
 
 docker: docker.yaml
+
 kubernetes: k8s.yaml
+
 control-plane(kubeadm init): master.yaml
+
 worker-node(kubeadm join): worker.yaml
+
 rook: ceph.yaml
+
 machbase: machbase.yaml
