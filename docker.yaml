@@ -18,10 +18,14 @@
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
-
+        
+    - name: Set docker architecture variable
+      set_fact:
+        docker_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'arm64' else 'amd64' }}"
+        
     - name: Add Docker APT repository
       apt_repository:
-        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
+        repo: deb [arch={{ docker_arch }}] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
         state: present
 
     - name: Install Docker
