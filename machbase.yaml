@@ -1,7 +1,7 @@
 ---
 - name: install DB
   hosts: control
-  become: yes
+  become: no
   tasks:
     - name: apply machbase.yaml
       command: kubectl apply -f machbase-neo.yaml
