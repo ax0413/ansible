@@ -1,7 +1,7 @@
 ---
 - name: Deploy Rook on Kubernetes
   hosts: control
-  become: yes
+  become: no
   tasks:
     - name: git clone rook
       command: git clone --single-branch --branch v1.14.8 https://github.com/rook/rook.git
