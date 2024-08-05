@@ -1,0 +1,13 @@
+---
+- name: docker
+  import_playbook: docker.yaml
+- name: k8s
+  import_playbook: k8s.yaml
+- name: master
+  import_playbook: master.yaml
+- name: worker
+  import_playbook: worker.yaml
+- name: ceph
+  import_playbook: ceph.yaml
+- name: machbase
+  import_playbook: machbase.yaml
