@@ -1,7 +1,7 @@
 ---
 - name: Join Kubernetes cluster
-  hosts: control
-  become: yes
+  hosts: control, worker
+  become: no
   tasks:
     - name: Get token and cert hash from the master
       shell: |
@@ -13,18 +13,44 @@
         echo $TOKEN
         echo $CA_CERT_HASH
       register: k8s_info
+      when: "'control' in group_names"
 
     - name: Join the Kubernetes cluster
       set_fact:
         master_ip: "{{ k8s_info.stdout_lines[0] }}"
         token: "{{ k8s_info.stdout_lines[1] }}"
         ca_cert_hash: "{{ k8s_info.stdout_lines[2] }}"
+      when: "'control' in group_names"
 
-    - name: Join the Kubernetes cluster
-      command: kubeadm join {{ master_ip }}:6443 --token {{ token }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}
+    - name: Copy kubeadm file
+      copy:
+        content: "kubeadm join {{ master_ip }}:6443 --token {{ token }} --discovery-token-ca-cert-hash {{ ca_cert_hash }}"
+        dest: "{{ playbook_dir }}/kubeadm_join.sh"
+      when: "'control' in group_names"
+
+    - name: Fetch kubeadm file
+      fetch:
+        src: "{{ playbook_dir }}/kubeadm_join.sh"
+        dest: /tmp
+        flat: yes
+      when: "'worker' in group_names"
+
+    - name: Execute file
+      command: /bin/bash /tmp/kubeadm_join.sh
+      become: yes
+      when: "'worker' in group_names"
+
+    - name: Delete file
+      file:
+        path: /tmp/kubeadm_join.sh
+        state: absent
+      ignore_errors: yes
+      when: "'worker' in group_names"
 
     - name: Ensure kubelet is started
       service:
         name: kubelet
         state: started
         enabled: yes
+      when: "'worker' in group_names"
+      become: yes
