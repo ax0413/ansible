@@ -21,7 +21,7 @@
         
     - name: Set docker architecture variable
       set_fact:
-        docker_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'arm64' else 'amd64' }}"
+        docker_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
         
     - name: Add Docker APT repository
       apt_repository:
